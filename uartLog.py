@@ -44,22 +44,21 @@ def uart_refresh():
     """
     # Detect all existing serial ports and store the information in the list
     i = 0
-
+    uart_list = []
     port_list = list(serial.tools.list_ports.comports())
     for port in port_list:
         if port:
-            i += 1
             uart_list.append(port)
-            print(uart_list[i])
+            list_entry = str(uart_list[i])
+            list_entry_device = list_entry.split(maxsplit=2)
+            if len(list_entry_device) == 3:
+                if list_entry_device[2] == 'Sonoff Zigbee 3.0 USB Dongle Plus':
+                    uart_list= [ list_entry_device[0] ]
+                    print("Sonoff Zigbee 3.0 USB Dongle Plus detected")
+                    return uart_list
+            i += 1
 
-    if len(uart_list) is None:
-        return "uart_list = NULL"
-
-
-# Save log data to file
-handler = logging.FileHandler('%s.txt' % time.strftime("%Y-%m-%d %H_%M"))
-handler.setLevel(logging.DEBUG)
-logger.addHandler(handler)
+    return uart_list
 
 
 def sendDataToSerialPort(sp, data):
@@ -312,13 +311,16 @@ if __name__ == "__main__":
 
     # pyinstaller -i butter.ico -F d:/桌面/seven.py
 
-    uart_list = [0]
-    uart_refresh()  # 获取已有的串口信息
+    uart_list = uart_refresh()  # 获取已有的串口信息
 
     try:
-        name = input("Select the serial port (just enter the number of the serial port):")
-
-        SERIAL_PORT_CFG = {'name': "COM" + name,
+        if len(uart_list) == 1:
+            print("Only one device detected, autoselecting..")
+            name = uart_list[0]
+        else:
+            name = input("Multiple devices detected, enter the device path of your dongle:")
+        print("Using device '%s'" % name)
+        SERIAL_PORT_CFG = {'name': name,
                            'baudrate': 115200,
                            'timeout': 5,
                            'parity': serial.PARITY_NONE,
